@@ -70,9 +70,13 @@ func connClient(c net.Conn,
         msgChan <- fmt.SPrintf("%s left the room.\n", client.name)
         log.Printf("Connection from %v closed.\n", c.RemoteAddr())
         rmvChan <- client
-    }
-    
+    }()
+    io.WriteString(c, fmt.Sprintf("Welcome, %s!\n", client.name))
+    msgChan <- fmt.Sprintf("%s has joined the room.\n", client.name)
 
+    // I/O
+    go client.ClientRead(msgChan)
+    client.ClientWrite(client.channel)
 }
 
 func promptName(c net.Conn, bufc *bufio.Reader) string {
@@ -89,9 +93,42 @@ func promptTags(c net.Conn, bufc *bufio.Reader) []string {
     return strings.Split(tags, " ")
 }
 
-
-
+func mngMessages(msgChan chan<- string,
+                    addChan chan<- Client,
+                    rmvChan chan<- Client) {
+    clients := make(map[net.Conn] chan<- string)
+    for {
+        select {
+        case msg := <-msgChan:
+			log.Printf("New message: %s", msg)
+			for _, ch := range clients {
+				go func(mCh chan<- string) {
+                    mCh <- "\033[1;33;40m" + msg + "\033[m"
+                }(ch)
+			}
+		case client := <-addChan:
+			log.Printf("New client: %v\n", client.conn)
+			clients[client.conn] = client.ch
+		case client := <-rmvChan:
+			log.Printf("Client disconnects: %v\n", client.conn)
+			delete(clients, client.conn)
+        }
+    }
+}
 
 func main() {
-
+    ln, err := net.Listen("tcp", ":6000")
+	if err != nil { panic(err) }
+    msgChan := make(chan string)
+    addChan := make(chan Client)
+    rmvChan := make(chan Client)
+    go mngMessages(msgChan, addChan, rmvChan)
+    for {
+        conn, err := ln.Accept()
+		if err != nil {
+			fmt.Println(err)
+			continue
+		}
+    }
+    go connClient(conn, msgChan, addChan, rmvChan)
 }
