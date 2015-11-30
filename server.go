@@ -14,7 +14,7 @@ const LOGO string =
 "\033[1m" +
 `
       ####      ####
-    ##    ##  ##    ##
+    ##    ##  ##    ##  v.1.0.0 alpha
     ##    ##  ##    ##
     ##        ##    ##    ######  ##    ##    ####    ########
     ##  ####  ##    ##  ##        ##    ##  ##    ##     ##
@@ -26,10 +26,10 @@ const LOGO string =
 
 // define a Client
 type Client struct {
-    name string         // client name
-    tags []string       // list of tags
-    ch chan string      // channel
-    conn net.conn       // connection
+    conn net.conn               // connection
+    name string                 // client name
+    tags []string               // list of tags
+    channel chan string         // channel
 }
 
 func (this Client) ClientRead(ch chan<- string) {
@@ -48,7 +48,34 @@ func (this Client) ClientWrite(ch <-chan string) {
     }
 }
 
-func promptName(c net.Conn, bufc *bufio.Reader) {
+func connClient(c net.Conn,
+                msgChan chan<- string,
+                addChan chan<- Client,
+                rmvChan chan<- Client) {
+    bufc := bufio.NewReader(c)
+    defer c.Close()
+    client := Client{
+        conn        : c
+        name        : promptName(c, bufc),
+        tags        : promptTags(c, bufc),
+        channel     : make(chan string),
+    }
+    if len(client.name) == 0 {
+        io.WriteString(c, "INVALID NAME!\n")
+        return
+    }
+
+    addChan <- client
+    defer func() {
+        msgChan <- fmt.SPrintf("%s left the room.\n", client.name)
+        log.Printf("Connection from %v closed.\n", c.RemoteAddr())
+        rmvChan <- client
+    }
+    
+
+}
+
+func promptName(c net.Conn, bufc *bufio.Reader) string {
     io.WriteString(c, LOGO)
     io.WriteString(c, "Welcome, stranger!\n")
     io.WriteString(c, "INPUT NAME: ")
@@ -56,13 +83,11 @@ func promptName(c net.Conn, bufc *bufio.Reader) {
     return string(name)
 }
 
-func promptTags(c net.Conn, bufc *bufio.Reader) {
-    io.WriteString(c, "INPUT TAGS: ")
+func promptTags(c net.Conn, bufc *bufio.Reader) []string {
+    io.WriteString(c, "INPUT TAGS (separated by spaces): ")
     tags, _, _ := bufc.ReadString()
-    // separate the tags by spaces
-    
+    return strings.Split(tags, " ")
 }
-
 
 
 
