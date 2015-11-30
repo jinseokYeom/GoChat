@@ -9,6 +9,21 @@ import ("fmt"
         "strings"
 )
 
+// Go Chat logo
+const LOGO string =
+"\033[1m" +
+`
+      ####      ####
+    ##    ##  ##    ##
+    ##    ##  ##    ##
+    ##        ##    ##    ######  ##    ##    ####    ########
+    ##  ####  ##    ##  ##        ##    ##  ##    ##     ##
+    ##    ##  ##    ##  ##        ########  ########     ##
+    ##    ##  ##    ##  ##        ##    ##  ##    ##     ##
+      ####      ####      ######  ##    ##  ##    ##     ##
+`
++ "\033[0m\n"
+
 // define a Client
 type Client struct {
     name string         // client name
@@ -31,6 +46,21 @@ func (this Client) ClientWrite(ch <-chan string) {
         _, err := io.WriteString(this.conn, msg)
         if err != nil { break }
     }
+}
+
+func promptName(c net.Conn, bufc *bufio.Reader) {
+    io.WriteString(c, LOGO)
+    io.WriteString(c, "Welcome, stranger!\n")
+    io.WriteString(c, "INPUT NAME: ")
+    name, _, _ := bufc.ReadString()
+    return string(name)
+}
+
+func promptTags(c net.Conn, bufc *bufio.Reader) {
+    io.WriteString(c, "INPUT TAGS: ")
+    tags, _, _ := bufc.ReadString()
+    // separate the tags by spaces
+    
 }
 
 
