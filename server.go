@@ -10,7 +10,7 @@ import ("fmt"
 
 // Go Chat logo
 const LOGO string =
-"\033[1m" + `
+"\033[1;36m" + `
       ####      ####
     ##    ##  ##    ##  alpha v.1.0.0
     ##    ##  ##    ##
