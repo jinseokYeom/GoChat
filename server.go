@@ -5,7 +5,6 @@ import ("fmt"
         "bufio"
         "net"
         "io"
-        "strings"
 )
 
 // Go Chat logo
@@ -53,7 +52,6 @@ func connClient(c net.Conn,
     client := Client{
         conn:           c,
         name:           promptName(c, bufc),
-        tags:           promptTags(c, bufc),
         channel:        make(chan string),
     }
     if len(client.name) == 0 {
@@ -93,7 +91,7 @@ func mngMessages(msgChan <-chan string,
 			log.Printf("New message: %s", msg)
 			for _, ch := range clients {
 				go func(mCh chan<- string) {
-                    mCh <- "\033[1;33;40m" + msg + "\033[m"
+                    mCh <- "\033[1;36m" + msg + "\033[0m"
                 }(ch)
 			}
 		case client := <-addChan:
