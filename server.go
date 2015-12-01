@@ -25,7 +25,6 @@ const LOGO string =
 type Client struct {
     conn net.Conn               // connection
     name string                 // client name
-    tags []string               // list of tags
     channel chan string         // channel
 }
 
@@ -82,12 +81,6 @@ func promptName(c net.Conn, bufc *bufio.Reader) string {
     io.WriteString(c, "INPUT NAME: ")
     name, _, _ := bufc.ReadLine()
     return string(name)
-}
-
-func promptTags(c net.Conn, bufc *bufio.Reader) []string {
-    io.WriteString(c, "INPUT TAGS (separated by spaces): ")
-    tags, _, _ := bufc.ReadLine()
-    return strings.Split(string(tags), " ")
 }
 
 func mngMessages(msgChan <-chan string,
